@@ -29,7 +29,7 @@
                 </div>
             </div>
             
-            <!-- Dynamic Date Display -->
+            <!-- Dynamic Date & Time Display -->
             <div class="bg-white/10 backdrop-blur-md px-5 py-2.5 rounded-xl border border-white/20 text-center shadow-sm">
                 <div id="clock-time" class="text-lg font-bold font-mono text-yellow-300">00:00:00 WIB</div>
                 <div id="clock-date" class="text-xs font-medium text-blue-100"> loading tanggal... </div>
@@ -66,9 +66,9 @@
                 <div>
                     <h3 class="font-bold text-base text-blue-950">Petunjuk Pelaksanaan Ujian:</h3>
                     <ul class="text-sm mt-1 text-blue-800 list-disc list-inside space-y-1">
-                        <li>Pilihlah mata pelajaran sesuai dengan jadwal dan sesi ujian Anda.</li>
-                        <li>Tombol ujian hanya akan aktif jika ujian untuk sesi tersebut dibuka oleh pengawas/admin.</li>
-                        <li>Pastikan Anda terhubung dengan koneksi internet yang stabil sebelum menekan tombol masuk.</li>
+                        <li>Tombol ujian akan <strong>terbuka otomatis</strong> sesuai tanggal dan jam sesi ujian yang dijadwalkan.</li>
+                        <li><strong>Sesi 1:</strong> Jam 07:30 – 09:30 WIB | <strong>Sesi 2:</strong> Jam 10:00 – 12:00 WIB.</li>
+                        <li>Pastikan perangkat terhubung dengan internet yang stabil saat pengerjaan.</li>
                     </ul>
                 </div>
             </div>
@@ -79,7 +79,7 @@
             </div>
         </section>
 
-        <!-- ================= ADMIN AUTH MODAL / VIEW ================= -->
+        <!-- ================= ADMIN AUTH VIEW ================= -->
         <section id="view-admin-auth" class="hidden max-w-md mx-auto my-12">
             <div class="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl text-center space-y-6">
                 <div class="w-16 h-16 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center mx-auto text-2xl shadow-inner">
@@ -87,7 +87,7 @@
                 </div>
                 <div>
                     <h2 class="text-xl font-bold text-slate-800">Akses Panel Admin</h2>
-                    <p class="text-xs text-slate-500 mt-1">Masukkan PIN untuk mengelola tautan dan jadwal ujian</p>
+                    <p class="text-xs text-slate-500 mt-1">Masukkan PIN untuk mengelola tautan dan tanggal ujian</p>
                 </div>
                 <form onsubmit="handleAdminLogin(event)" class="space-y-4">
                     <div>
@@ -103,13 +103,12 @@
 
         <!-- ================= ADMIN CONTROL PANEL VIEW ================= -->
         <section id="view-admin-panel" class="hidden space-y-6">
-            <!-- Header Admin -->
             <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                        <i class="fa-solid fa-sliders text-blue-600"></i> Pengaturan Sesi & Google Form
+                        <i class="fa-solid fa-clock-rotate-left text-blue-600"></i> Pengaturan Tanggal & Link Ujian
                     </h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Centang sesi yang aktif agar tombol menuju Google Form tampil di halaman siswa.</p>
+                    <p class="text-xs text-slate-500 mt-0.5">Sesi ujian aktif otomatis saat Jam Server masuk ke rentang waktu sesi pada Tanggal Ujian.</p>
                 </div>
                 <div class="flex gap-3 w-full md:w-auto">
                     <button onclick="openAddModal()" class="flex-1 md:flex-none px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-sm transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2">
@@ -123,7 +122,7 @@
 
             <!-- Admin Table / Card List -->
             <div id="admin-subject-list" class="space-y-4">
-                <!-- JS render list pengaturan mapel -->
+                <!-- JS render list mapel admin -->
             </div>
         </section>
 
@@ -154,17 +153,17 @@
                     <input type="text" id="form-mapel-nama" required placeholder="Contoh: Bahasa Indonesia" class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-none">
                 </div>
 
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Tanggal Pelaksanaan Ujian</label>
+                    <input type="date" id="form-mapel-tanggal" required class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-none">
+                </div>
+
                 <!-- Form Sesi 1 -->
                 <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
                     <div class="flex justify-between items-center">
                         <span class="text-xs font-bold text-blue-900 flex items-center gap-1.5">
-                            <i class="fa-solid fa-clock text-blue-600"></i> SESI 1 (07:30 - 09:30)
+                            <i class="fa-solid fa-clock text-blue-600"></i> SESI 1 (07:30 - 09:30 WIB)
                         </span>
-                        <label class="inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="form-sesi1-active" class="sr-only peer">
-                            <div class="relative w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
-                            <span class="ms-2 text-xs font-semibold text-slate-600">Aktif</span>
-                        </label>
                     </div>
                     <input type="url" id="form-sesi1-url" placeholder="URL Google Form Sesi 1" class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-none">
                 </div>
@@ -173,13 +172,8 @@
                 <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
                     <div class="flex justify-between items-center">
                         <span class="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
-                            <i class="fa-solid fa-clock text-indigo-600"></i> SESI 2 (10:00 - 12:00)
+                            <i class="fa-solid fa-clock text-indigo-600"></i> SESI 2 (10:00 - 12:00 WIB)
                         </span>
-                        <label class="inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="form-sesi2-active" class="sr-only peer">
-                            <div class="relative w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
-                            <span class="ms-2 text-xs font-semibold text-slate-600">Aktif</span>
-                        </label>
                     </div>
                     <input type="url" id="form-sesi2-url" placeholder="URL Google Form Sesi 2" class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-none">
                 </div>
@@ -194,29 +188,33 @@
 
     <!-- JAVASCRIPT LOGIC -->
     <script>
-        // CONFIG & INITIAL STATE
         const ADMIN_PIN = "Pleret12345";
         let isAdminLoggedIn = false;
 
-        // Default Data Mapel jika Belum Ada di LocalStorage
+        // Formatter tanggal YYYY-MM-DD lokal
+        function getTodayString() {
+            const d = new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Default Data Mapel
         const defaultSubjects = [
             {
                 id: '1',
                 nama: 'Matematika',
-                sesi1: { active: true, url: 'https://forms.google.com' },
-                sesi2: { active: false, url: 'https://forms.google.com' }
+                tanggal: getTodayString(),
+                sesi1: { manualOverride: false, url: 'https://forms.google.com' },
+                sesi2: { manualOverride: false, url: 'https://forms.google.com' }
             },
             {
                 id: '2',
-                nama: 'Bahosa Indonesia',
-                sesi1: { active: true, url: 'https://forms.google.com' },
-                sesi2: { active: true, url: 'https://forms.google.com' }
-            },
-            {
-                id: '3',
-                nama: 'Bahasa Inggris',
-                sesi1: { active: false, url: 'https://forms.google.com' },
-                sesi2: { active: false, url: 'https://forms.google.com' }
+                nama: 'Bahasa Indonesia',
+                tanggal: getTodayString(),
+                sesi1: { manualOverride: false, url: 'https://forms.google.com' },
+                sesi2: { manualOverride: false, url: 'https://forms.google.com' }
             }
         ];
 
@@ -224,7 +222,7 @@
 
         // LOAD DATA
         function loadData() {
-            const stored = localStorage.getItem('smkn1_ujian_data');
+            const stored = localStorage.getItem('smkn1_ujian_data_v2');
             if (stored) {
                 try {
                     subjects = JSON.parse(stored);
@@ -238,12 +236,36 @@
         }
 
         function saveData() {
-            localStorage.setItem('smkn1_ujian_data', JSON.stringify(subjects));
+            localStorage.setItem('smkn1_ujian_data_v2', JSON.stringify(subjects));
             renderUserView();
             if (isAdminLoggedIn) renderAdminView();
         }
 
-        // REALTIME CLOCK & DATE
+        // EVALUASI WAKTU / JADWAL OTOMATIS
+        function isSessionActive(tanggalMapel, sesiType, manualOverride) {
+            // Jika dikontrol manual oleh admin untuk SELALU BUKA
+            if (manualOverride) return true;
+
+            const now = new Date();
+            const todayStr = getTodayString();
+
+            // Cek apakah hari ini sama dengan tanggal ujian
+            if (tanggalMapel !== todayStr) return false;
+
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+            if (sesiType === 'sesi1') {
+                // 07:30 (450 m) - 09:30 (570 m)
+                return currentMinutes >= 450 && currentMinutes < 570;
+            } else if (sesiType === 'sesi2') {
+                // 10:00 (600 m) - 12:00 (720 m)
+                return currentMinutes >= 600 && currentMinutes < 720;
+            }
+
+            return false;
+        }
+
+        // REALTIME CLOCK & CHECKER
         function updateClock() {
             const now = new Date();
             
@@ -255,6 +277,9 @@
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             const dateStr = now.toLocaleDateString('id-ID', options);
             document.getElementById('clock-date').textContent = dateStr;
+
+            // Re-render status ketersediaan tombol setiap detik
+            renderUserView();
         }
         setInterval(updateClock, 1000);
         updateClock();
@@ -318,19 +343,27 @@
         // RENDER USER VIEW
         function renderUserView() {
             const container = document.getElementById('user-subject-list');
+            if (!container) return;
             container.innerHTML = '';
 
             if (subjects.length === 0) {
                 container.innerHTML = `
                     <div class="col-span-full text-center py-12 bg-white rounded-3xl border border-dashed border-slate-300">
                         <i class="fa-solid fa-folder-open text-4xl text-slate-300 mb-2"></i>
-                        <p class="text-slate-500 font-medium">Belum ada mata pelajaran yang ditambahkan.</p>
+                        <p class="text-slate-500 font-medium">Belum ada jadwal mata pelajaran yang tersedia.</p>
                     </div>
                 `;
                 return;
             }
 
             subjects.forEach(subject => {
+                const isSesi1Active = isSessionActive(subject.tanggal, 'sesi1', subject.sesi1.manualOverride);
+                const isSesi2Active = isSessionActive(subject.tanggal, 'sesi2', subject.sesi2.manualOverride);
+
+                // Format Tanggal Tampilan
+                const dateObj = new Date(subject.tanggal + 'T00:00:00');
+                const tglFormatted = dateObj.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+
                 const card = document.createElement('div');
                 card.className = "bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm hover:shadow-md transition-all space-y-4";
                 
@@ -340,46 +373,55 @@
                             <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-lg">
                                 <i class="fa-solid fa-book"></i>
                             </div>
-                            <h3 class="font-bold text-slate-800 text-lg">${escapeHtml(subject.nama)}</h3>
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-lg">${escapeHtml(subject.nama)}</h3>
+                                <p class="text-xs text-slate-500 font-medium"><i class="fa-regular fa-calendar-check text-blue-600"></i> Tanggal: ${tglFormatted}</p>
+                            </div>
                         </div>
                     </div>
 
                     <!-- SESI LIST -->
                     <div class="space-y-3">
                         <!-- Sesi 1 -->
-                        <div class="p-3.5 rounded-2xl ${subject.sesi1.active ? 'bg-emerald-50/70 border border-emerald-200' : 'bg-slate-50 border border-slate-200'} flex items-center justify-between gap-3">
+                        <div class="p-3.5 rounded-2xl ${isSesi1Active ? 'bg-emerald-50 border border-emerald-300' : 'bg-slate-50 border border-slate-200'} flex items-center justify-between gap-3">
                             <div>
-                                <span class="text-xs font-bold ${subject.sesi1.active ? 'text-emerald-900' : 'text-slate-500'} block">SESI 1</span>
-                                <span class="text-xs ${subject.sesi1.active ? 'text-emerald-700' : 'text-slate-400'} flex items-center gap-1 font-medium">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold ${isSesi1Active ? 'text-emerald-900' : 'text-slate-600'}">SESI 1</span>
+                                    ${subject.sesi1.manualOverride ? '<span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-bold">Manual Buka</span>' : ''}
+                                </div>
+                                <span class="text-xs ${isSesi1Active ? 'text-emerald-700' : 'text-slate-400'} flex items-center gap-1 font-medium">
                                     <i class="fa-regular fa-clock"></i> 07:30 - 09:30 WIB
                                 </span>
                             </div>
                             ${
-                                subject.sesi1.active && subject.sesi1.url
-                                ? `<a href="${escapeHtml(subject.sesi1.url)}" target="_blank" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm flex items-center gap-1.5 transition-all">
+                                isSesi1Active && subject.sesi1.url
+                                ? `<a href="${escapeHtml(subject.sesi1.url)}" target="_blank" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 flex items-center gap-1.5 transition-all">
                                     <i class="fa-solid fa-arrow-right-to-bracket"></i> Masuk Ujian
                                    </a>`
                                 : `<span class="px-3 py-1.5 bg-slate-200 text-slate-500 rounded-lg text-xs font-semibold">
-                                    Belum Dibuka
+                                    Belum/Tidak Aktif
                                    </span>`
                             }
                         </div>
 
                         <!-- Sesi 2 -->
-                        <div class="p-3.5 rounded-2xl ${subject.sesi2.active ? 'bg-indigo-50/70 border border-indigo-200' : 'bg-slate-50 border border-slate-200'} flex items-center justify-between gap-3">
+                        <div class="p-3.5 rounded-2xl ${isSesi2Active ? 'bg-indigo-50 border border-indigo-300' : 'bg-slate-50 border border-slate-200'} flex items-center justify-between gap-3">
                             <div>
-                                <span class="text-xs font-bold ${subject.sesi2.active ? 'text-indigo-900' : 'text-slate-500'} block">SESI 2</span>
-                                <span class="text-xs ${subject.sesi2.active ? 'text-indigo-700' : 'text-slate-400'} flex items-center gap-1 font-medium">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold ${isSesi2Active ? 'text-indigo-900' : 'text-slate-600'}">SESI 2</span>
+                                    ${subject.sesi2.manualOverride ? '<span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-bold">Manual Buka</span>' : ''}
+                                </div>
+                                <span class="text-xs ${isSesi2Active ? 'text-indigo-700' : 'text-slate-400'} flex items-center gap-1 font-medium">
                                     <i class="fa-regular fa-clock"></i> 10:00 - 12:00 WIB
                                 </span>
                             </div>
                             ${
-                                subject.sesi2.active && subject.sesi2.url
-                                ? `<a href="${escapeHtml(subject.sesi2.url)}" target="_blank" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm flex items-center gap-1.5 transition-all">
+                                isSesi2Active && subject.sesi2.url
+                                ? `<a href="${escapeHtml(subject.sesi2.url)}" target="_blank" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/20 flex items-center gap-1.5 transition-all">
                                     <i class="fa-solid fa-arrow-right-to-bracket"></i> Masuk Ujian
                                    </a>`
                                 : `<span class="px-3 py-1.5 bg-slate-200 text-slate-500 rounded-lg text-xs font-semibold">
-                                    Belum Dibuka
+                                    Belum/Tidak Aktif
                                    </span>`
                             }
                         </div>
@@ -400,9 +442,12 @@
 
                 item.innerHTML = `
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-3">
-                        <div class="flex items-center gap-2">
-                            <span class="w-6 h-6 bg-slate-100 text-slate-600 rounded-lg flex items-center justify-center font-bold text-xs">${index + 1}</span>
-                            <h3 class="font-bold text-slate-800 text-base">${escapeHtml(subject.nama)}</h3>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-6 h-6 bg-slate-100 text-slate-600 rounded-lg flex items-center justify-center font-bold text-xs">${index + 1}</span>
+                                <h3 class="font-bold text-slate-800 text-base">${escapeHtml(subject.nama)}</h3>
+                            </div>
+                            <span class="text-xs text-blue-700 font-semibold ml-8"><i class="fa-solid fa-calendar-days"></i> Tanggal Ujian: ${subject.tanggal}</span>
                         </div>
                         <div class="flex items-center gap-2 self-end sm:self-auto">
                             <button onclick="openEditModal('${subject.id}')" class="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg text-xs font-semibold transition-all">
@@ -414,30 +459,34 @@
                         </div>
                     </div>
 
-                    <!-- TOGGLE CONTROLS FOR SESSIONS -->
+                    <!-- OVERRIDE MANUAL TOGGLE -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                        <!-- Quick Toggle Sesi 1 -->
-                        <div class="flex items-center justify-between p-3 rounded-xl border ${subject.sesi1.active ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}">
+                        <div class="flex items-center justify-between p-3 rounded-xl border bg-slate-50 border-slate-200">
                             <div>
                                 <span class="font-bold text-slate-800 block">Sesi 1 (07:30 - 09:30)</span>
                                 <span class="text-slate-500 text-[10px] truncate max-w-[180px] block">${subject.sesi1.url ? escapeHtml(subject.sesi1.url) : 'URL Belum diisi'}</span>
                             </div>
-                            <label class="inline-flex items-center cursor-pointer">
-                                <input type="checkbox" ${subject.sesi1.active ? 'checked' : ''} onchange="toggleSession('${subject.id}', 'sesi1')" class="sr-only peer">
-                                <div class="relative w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                            </label>
+                            <div class="text-right">
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" ${subject.sesi1.manualOverride ? 'checked' : ''} onchange="toggleManualOverride('${subject.id}', 'sesi1')" class="sr-only peer">
+                                    <div class="relative w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
+                                </label>
+                                <span class="block text-[9px] font-semibold text-slate-500 mt-0.5">Paksa Buka</span>
+                            </div>
                         </div>
 
-                        <!-- Quick Toggle Sesi 2 -->
-                        <div class="flex items-center justify-between p-3 rounded-xl border ${subject.sesi2.active ? 'bg-indigo-50 border-indigo-200' : 'bg-slate-50 border-slate-200'}">
+                        <div class="flex items-center justify-between p-3 rounded-xl border bg-slate-50 border-slate-200">
                             <div>
                                 <span class="font-bold text-slate-800 block">Sesi 2 (10:00 - 12:00)</span>
                                 <span class="text-slate-500 text-[10px] truncate max-w-[180px] block">${subject.sesi2.url ? escapeHtml(subject.sesi2.url) : 'URL Belum diisi'}</span>
                             </div>
-                            <label class="inline-flex items-center cursor-pointer">
-                                <input type="checkbox" ${subject.sesi2.active ? 'checked' : ''} onchange="toggleSession('${subject.id}', 'sesi2')" class="sr-only peer">
-                                <div class="relative w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                            </label>
+                            <div class="text-right">
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" ${subject.sesi2.manualOverride ? 'checked' : ''} onchange="toggleManualOverride('${subject.id}', 'sesi2')" class="sr-only peer">
+                                    <div class="relative w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
+                                </label>
+                                <span class="block text-[9px] font-semibold text-slate-500 mt-0.5">Paksa Buka</span>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -445,16 +494,14 @@
             });
         }
 
-        // TOGGLE SESSION DIRECTLY
-        function toggleSession(id, sesiKey) {
+        function toggleManualOverride(id, sesiKey) {
             const index = subjects.findIndex(s => s.id === id);
             if (index !== -1) {
-                subjects[index][sesiKey].active = !subjects[index][sesiKey].active;
+                subjects[index][sesiKey].manualOverride = !subjects[index][sesiKey].manualOverride;
                 saveData();
             }
         }
 
-        // DELETE SUBJECT
         function deleteSubject(id) {
             if (confirm('Apakah Anda yakin ingin menghapus mata pelajaran ini?')) {
                 subjects = subjects.filter(s => s.id !== id);
@@ -467,11 +514,9 @@
             document.getElementById('modal-title').textContent = 'Tambah Mata Pelajaran';
             document.getElementById('form-mapel-id').value = '';
             document.getElementById('form-mapel-nama').value = '';
+            document.getElementById('form-mapel-tanggal').value = getTodayString();
             
-            document.getElementById('form-sesi1-active').checked = false;
             document.getElementById('form-sesi1-url').value = '';
-            
-            document.getElementById('form-sesi2-active').checked = false;
             document.getElementById('form-sesi2-url').value = '';
 
             document.getElementById('modal-mapel').classList.remove('hidden');
@@ -484,11 +529,9 @@
             document.getElementById('modal-title').textContent = 'Edit Mata Pelajaran';
             document.getElementById('form-mapel-id').value = subject.id;
             document.getElementById('form-mapel-nama').value = subject.nama;
+            document.getElementById('form-mapel-tanggal').value = subject.tanggal || getTodayString();
             
-            document.getElementById('form-sesi1-active').checked = subject.sesi1.active;
             document.getElementById('form-sesi1-url').value = subject.sesi1.url || '';
-            
-            document.getElementById('form-sesi2-active').checked = subject.sesi2.active;
             document.getElementById('form-sesi2-url').value = subject.sesi2.url || '';
 
             document.getElementById('modal-mapel').classList.remove('hidden');
@@ -503,31 +546,26 @@
             
             const id = document.getElementById('form-mapel-id').value;
             const nama = document.getElementById('form-mapel-nama').value.trim();
+            const tanggal = document.getElementById('form-mapel-tanggal').value;
             
-            const sesi1Active = document.getElementById('form-sesi1-active').checked;
             const sesi1Url = document.getElementById('form-sesi1-url').value.trim();
-            
-            const sesi2Active = document.getElementById('form-sesi2-active').checked;
             const sesi2Url = document.getElementById('form-sesi2-url').value.trim();
 
             if (id) {
-                // Update Existing
                 const index = subjects.findIndex(s => s.id === id);
                 if (index !== -1) {
-                    subjects[index] = {
-                        id,
-                        nama,
-                        sesi1: { active: sesi1Active, url: sesi1Url },
-                        sesi2: { active: sesi2Active, url: sesi2Url }
-                    };
+                    subjects[index].nama = nama;
+                    subjects[index].tanggal = tanggal;
+                    subjects[index].sesi1.url = sesi1Url;
+                    subjects[index].sesi2.url = sesi2Url;
                 }
             } else {
-                // Create New
                 const newSubject = {
                     id: Date.now().toString(),
                     nama,
-                    sesi1: { active: sesi1Active, url: sesi1Url },
-                    sesi2: { active: sesi2Active, url: sesi2Url }
+                    tanggal,
+                    sesi1: { manualOverride: false, url: sesi1Url },
+                    sesi2: { manualOverride: false, url: sesi2Url }
                 };
                 subjects.push(newSubject);
             }
@@ -536,7 +574,6 @@
             closeMapelModal();
         }
 
-        // UTILITY ESCAPE HTML (FOR SECURITY)
         function escapeHtml(str) {
             if (!str) return '';
             return str.replace(/[&<>"']/g, function(m) {
