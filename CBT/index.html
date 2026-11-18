@@ -1,1 +1,861 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>Portal Ujian Aman</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <style>
+    html, body {
+      height: 100dvh;
+      margin: 0;
+      padding: 0;
+      overscroll-behavior-y: none;
+      -webkit-user-select: none;
+      user-select: none;
+      background-color: #020617;
+    }
+    /* Optimalisasi Scroll Iframe Google Form di iOS Safari & Android Chrome */
+    .exam-frame-wrapper {
+      height: calc(100dvh - 56px);
+      width: 100%;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      background: #ffffff;
+    }
+    .exam-frame-wrapper iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+    /* Izinkan seleksi teks pada input form */
+    input, select, textarea {
+      -webkit-user-select: text;
+      user-select: text;
+    }
+  </style>
+</head>
+<body class="text-slate-100 font-sans antialiased">
 
+  <!-- =====================================================================
+       1. HALAMAN LOGIN SISWA (TAMPILAN DEFAULT)
+       ===================================================================== -->
+  <div id="view-student-login" class="min-h-[100dvh] flex flex-col justify-between p-4 bg-slate-950">
+    <!-- Top Bar Discreet -->
+    <div class="flex justify-between items-center max-w-md w-full mx-auto pt-2">
+      <div class="flex items-center gap-2 text-xs text-slate-400">
+        <span id="conn-dot-login" class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+        <span id="conn-text-login">Menghubungkan server...</span>
+      </div>
+      <button onclick="bukaLoginGuru()" class="text-xs text-slate-400 hover:text-emerald-400 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg transition">
+        🔐 Pengawas
+      </button>
+    </div>
+
+    <!-- Card Login -->
+    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-2xl w-full max-w-md mx-auto my-auto">
+      <div class="text-center mb-6">
+        <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 text-2xl mb-3 border border-emerald-500/20">
+          🛡️
+        </div>
+        <h1 class="text-xl font-bold text-white">Ruang Ujian Berbasis Web</h1>
+        <p class="text-xs text-slate-400 mt-1">Kompatibel dengan Android, iPhone & Laptop Sekolah</p>
+      </div>
+
+      <div class="bg-amber-950/40 border border-amber-800/50 rounded-xl p-3 mb-5 text-xs text-amber-200 space-y-1">
+        <p class="font-semibold text-amber-300">⚠️ Aturan Ketat Ujian:</p>
+        <p>• Dilarang berpindah tab, membuka aplikasi lain, atau *split-screen*.</p>
+        <p>• Pelanggaran otomatis mengunci layar & tercatat di dashboard guru.</p>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Nama Lengkap (Sesuai Absen)</label>
+          <input id="input-nama" type="text" autocomplete="name" placeholder="Contoh: Ahmad Fauzi" class="w-full p-3 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-emerald-400" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Kelas / Nomor Peserta</label>
+          <input id="input-kelas" type="text" placeholder="Contoh: XI IPA 2 - 014" class="w-full p-3 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-emerald-400" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Token Ujian</label>
+          <input id="input-token" type="text" autocapitalize="characters" placeholder="Masukkan token dari guru" class="w-full p-3 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white uppercase tracking-wider font-mono focus:outline-none focus:border-emerald-400" />
+        </div>
+        <button id="btn-mulai" onclick="mulaiUjian()" class="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-slate-950 font-bold rounded-xl text-sm shadow-lg shadow-emerald-500/20 transition">
+          Masuk & Kunci Layar Ujian
+        </button>
+      </div>
+    </div>
+
+    <p class="text-center text-[11px] text-slate-600 pb-2">Sistem Pengawasan Ujian Real-Time</p>
+  </div>
+
+  <!-- =====================================================================
+       2. LAYAR UJIAN AKTIF (GOOGLE FORM WRAPPER)
+       ===================================================================== -->
+  <div id="view-student-exam" class="hidden h-[100dvh] flex flex-col overflow-hidden">
+    <!-- Header Ujian -->
+    <div class="h-14 bg-slate-900 border-b border-slate-800 px-3 sm:px-4 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-2 min-w-0">
+        <span id="exam-conn-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0 animate-pulse"></span>
+        <div class="truncate">
+          <div id="display-nama" class="font-bold text-xs sm:text-sm text-white truncate"></div>
+          <div id="display-status-bar" class="text-[10px] text-emerald-400">Layar Terkunci Aman</div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <div class="text-[11px] bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-lg text-slate-300">
+          Pelanggaran: <strong id="display-pelanggaran" class="text-amber-400">0</strong>
+        </div>
+        <button onclick="konfirmasiSelesai()" class="bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition">
+          Selesai
+        </button>
+      </div>
+    </div>
+
+    <!-- Container Google Form -->
+    <div class="exam-frame-wrapper">
+      <iframe id="form-frame" src="" allow="autoplay" allowfullscreen>Memuat soal ujian...</iframe>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       3. LAYAR GEMBOK PELANGGARAN (OVERLAY LOCK)
+       ===================================================================== -->
+  <div id="lock-screen" class="hidden fixed inset-0 bg-red-950/95 backdrop-blur-md z-50 flex items-center justify-center p-5 text-center">
+    <div class="bg-slate-900/90 border-2 border-red-500 p-6 rounded-2xl max-w-md w-full shadow-2xl">
+      <div class="w-16 h-16 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center text-4xl mx-auto mb-3">
+        🔒
+      </div>
+      <h2 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight">LAYAR UJIAN TERKUNCI</h2>
+      <p id="lock-reason" class="text-red-300 text-xs sm:text-sm mt-2 mb-4 leading-relaxed">
+        Terdeteksi berpindah tab atau meninggalkan layar ujian.
+      </p>
+
+      <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-xl text-xs text-slate-300 space-y-1.5 mb-5">
+        <p>Nama: <strong id="lock-student-name" class="text-white"></strong></p>
+        <p>ID Sesi: <span id="lock-session-id" class="font-mono text-amber-400 font-bold"></span></p>
+        <p class="text-slate-400 pt-1 border-t border-slate-800">
+          Jangan me-refresh halaman. Silakan angkat tangan dan minta pengawas menekan <strong>Reset Sesi</strong>.
+        </p>
+      </div>
+
+      <div class="inline-flex items-center gap-2 text-xs text-red-300 bg-red-950/80 px-4 py-2 rounded-full border border-red-800/60">
+        <span class="w-2 h-2 rounded-full bg-red-400 animate-ping"></span>
+        Menunggu pembukaan kunci dari pengawas...
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       4. SERTIFIKAT BUKTI KEJUJURAN (SELESAI UJIAN)
+       ===================================================================== -->
+  <div id="finish-screen" class="hidden fixed inset-0 bg-slate-950 z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-slate-900 border border-emerald-500/30 p-6 rounded-2xl max-w-md w-full text-center shadow-2xl">
+      <div class="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-4xl mx-auto mb-3">
+        ✅
+      </div>
+      <h2 class="text-2xl font-bold text-emerald-400">Ujian Telah Selesai</h2>
+      <p class="text-xs text-slate-400 mt-1 mb-5">Bukti Kejujuran & Log Aktivitas Terkirim ke Pengawas</p>
+
+      <div class="bg-slate-950 p-4 rounded-xl text-left text-xs sm:text-sm space-y-2.5 border border-slate-800 mb-5">
+        <div class="flex justify-between">
+          <span class="text-slate-400">Nama Siswa:</span>
+          <strong id="cert-nama" class="text-white"></strong>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Kelas:</span>
+          <strong id="cert-kelas" class="text-white"></strong>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Status Kejujuran:</span>
+          <strong id="cert-status"></strong>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Total Pelanggaran:</span>
+          <strong id="cert-pelanggaran" class="text-white"></strong>
+        </div>
+        <div class="flex justify-between pt-2 border-t border-slate-800">
+          <span class="text-slate-400">Kode Verifikasi:</span>
+          <span id="cert-hash" class="font-mono text-emerald-400 font-bold"></span>
+        </div>
+      </div>
+
+      <button onclick="resetPerangkatBaru()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-xl border border-slate-700 transition">
+        Keluar / Siapkan untuk Sesi Berikutnya
+      </button>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       5. MODAL LOGIN PASSWORD GURU
+       ===================================================================== -->
+  <div id="view-teacher-login" class="hidden fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-sm w-full shadow-2xl">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-bold text-white">🔐 Akses Pengawas</h2>
+        <button onclick="tutupLoginGuru()" class="text-slate-400 hover:text-white text-lg">✕</button>
+      </div>
+      <p class="text-xs text-slate-400 mb-4">Masukkan password pengawas untuk membuka Live Dashboard dan kontrol sesi siswa.</p>
+      <input id="teacher-pass-input" type="password" placeholder="Password Pengawas" onkeydown="if(event.key==='Enter') verifikasiGuru()" class="w-full p-3 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white mb-4 focus:outline-none focus:border-emerald-400" />
+      <button onclick="verifikasiGuru()" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-sm transition">
+        Buka Live Dashboard
+      </button>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       6. LIVE DASHBOARD GURU (RESPONSIF HP / TABLET / LAPTOP)
+       ===================================================================== -->
+  <div id="view-teacher-dashboard" class="hidden min-h-[100dvh] bg-slate-950 p-4 md:p-8 overflow-y-auto">
+    <div class="max-w-7xl mx-auto space-y-6">
+      <!-- Top Bar -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-xl sm:text-2xl font-bold text-emerald-400">Live Dashboard Pengawas</h1>
+              <span class="text-[11px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full">Real-Time</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">Pantau kejujuran siswa, terima alert pindah tab & buka kunci sesi dengan 1 klik</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button id="btn-sound" onclick="toggleSound()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-2 rounded-xl text-xs font-medium">
+              🔔 Suara Alert: ON
+            </button>
+            <button onclick="exportCSV()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-2 rounded-xl text-xs font-medium">
+              📥 Unduh Bukti CSV
+            </button>
+            <button onclick="hapusSemuaSesi()" class="bg-red-950/70 hover:bg-red-900 text-red-300 border border-red-800/70 px-3 py-2 rounded-xl text-xs font-medium">
+              🗑️ Bersihkan Sesi
+            </button>
+            <button onclick="keluarDashboardGuru()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs">
+              Keluar
+            </button>
+          </div>
+        </div>
+
+        <!-- Konfigurasi Google Form -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 pt-4">
+          <div class="md:col-span-5">
+            <label class="block text-xs text-slate-400 mb-1">Link Google Form</label>
+            <input id="cfg-url" type="url" placeholder="https://docs.google.com/forms/d/e/.../viewform" class="w-full p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-400" />
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-xs text-slate-400 mb-1">Token Ujian</label>
+            <input id="cfg-token" type="text" placeholder="UJIAN2026" class="w-full p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-xs sm:text-sm text-white uppercase font-mono focus:outline-none focus:border-emerald-400" />
+          </div>
+          <div class="md:col-span-3">
+            <label class="block text-xs text-slate-400 mb-1">Sensitivitas Pindah Tab (HP)</label>
+            <select id="cfg-grace" class="w-full p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-400">
+              <option value="1500">Normal (Toleransi 1,5 dtk - Anti Notif HP)</option>
+              <option value="0">Sangat Ketat (0 dtk - Langsung Kunci)</option>
+            </select>
+          </div>
+          <div class="md:col-span-2 flex items-end">
+            <button onclick="simpanKonfigurasi()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm transition">
+              Simpan & Aktifkan
+            </button>
+          </div>
+        </div>
+
+        <!-- Tips Google Form Agar Lancar di iPhone & Android -->
+        <div class="mt-3 pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-slate-400">
+          <span>💡 <strong>Penting di Google Form:</strong> Matikan opsi <em>"Batasi untuk pengguna organisasi"</em> & hindari soal <em>Upload File</em> agar siswa tidak diminta login Google di dalam frame.</span>
+          <button onclick="salinLinkSiswa()" class="text-emerald-400 hover:underline font-semibold shrink-0 text-left sm:text-right">
+            📋 Salin Link Ujian Siswa
+          </button>
+        </div>
+      </div>
+
+      <!-- Statistik -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+          <p class="text-xs text-slate-400">Total Peserta</p>
+          <p id="stat-total" class="text-2xl font-bold text-white mt-1">0</p>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+          <p class="text-xs text-slate-400">Mengerjakan (Aman)</p>
+          <p id="stat-active" class="text-2xl font-bold text-emerald-400 mt-1">0</p>
+        </div>
+        <div class="bg-slate-900 border border-red-900/50 p-4 rounded-2xl">
+          <p class="text-xs text-red-300">Terkunci (Curang)</p>
+          <p id="stat-locked" class="text-2xl font-bold text-red-500 mt-1">0</p>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+          <p class="text-xs text-slate-400">Selesai Ujian</p>
+          <p id="stat-finished" class="text-2xl font-bold text-blue-400 mt-1">0</p>
+        </div>
+      </div>
+
+      <!-- Daftar Peserta Real-Time -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-800/80 text-slate-300 text-[11px] uppercase tracking-wider border-b border-slate-800">
+                <th class="p-4">Siswa & Perangkat</th>
+                <th class="p-4">Status Real-Time</th>
+                <th class="p-4">Bukti Kejujuran & Log Aktivitas</th>
+                <th class="p-4 text-right">Kontrol 1-Klik</th>
+              </tr>
+            </thead>
+            <tbody id="student-table-body" class="divide-y divide-slate-800 text-xs sm:text-sm">
+              <tr>
+                <td colspan="4" class="p-8 text-center text-slate-500">Menunggu siswa masuk ke ruang ujian...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // KONFIGURASI UTAMA (WAJIB DISESUAIKAN)
+    // =========================================================================
+    const TEACHER_PASSWORD = "GURU2026"; // Ganti password akses dashboard guru
+
+    const firebaseConfig = {
+    apiKey: "AIzaSyCwftnSfR99xQPI7gaYUW1Tmh6FANTc0Bk",
+  authDomain: "ujian-sekolah-7ff01.firebaseapp.com",
+  databaseURL: "https://ujian-sekolah-7ff01-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ujian-sekolah-7ff01",
+  storageBucket: "ujian-sekolah-7ff01.firebasestorage.app",
+  messagingSenderId: "24245486835",
+  appId: "1:24245486835:web:f2c1e7bfc6dae6b852a386",
+  measurementId: "G-XYEFGJ5ZHT"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // =========================================================================
+    // DETEKSI PERANGKAT & STATE GLOBAL
+    // =========================================================================
+    const ua = navigator.userAgent;
+    const isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isAndroid = /Android/i.test(ua);
+    const isMobileDevice = isIOS || isAndroid;
+    const deviceLabel = isIOS ? '🍎 iPhone/iPad' : (isAndroid ? '🤖 Android' : '💻 Laptop/PC');
+
+    let sessionId = localStorage.getItem('exam_session_id') || ('SES-' + Math.random().toString(36).substring(2, 7).toUpperCase());
+    localStorage.setItem('exam_session_id', sessionId);
+
+    let isExamActive = false;
+    let isLocked = false;
+    let violationCount = 0;
+    let graceMs = 1500;
+    let hideTimer = null;
+    let wakeLock = null;
+    let studentData = {};
+    let allStudents = {};
+    let soundEnabled = true;
+    let previousLockedCount = 0;
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+    }
+
+    // =========================================================================
+    // PEMANTAU KONEKSI SERVER REAL-TIME
+    // =========================================================================
+    db.ref('.info/connected').on('value', (snap) => {
+      const connected = snap.val() === true;
+      const dotLogin = document.getElementById('conn-dot-login');
+      const txtLogin = document.getElementById('conn-text-login');
+      const dotExam = document.getElementById('exam-conn-dot');
+      const barExam = document.getElementById('display-status-bar');
+
+      if (connected) {
+        dotLogin.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
+        txtLogin.innerText = 'Server Ujian Siap';
+        if (dotExam) dotExam.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0 animate-pulse';
+        if (barExam && !isLocked) {
+          barExam.innerText = 'Terhubung • Pengunci Aktif';
+          barExam.className = 'text-[10px] text-emerald-400';
+        }
+      } else {
+        dotLogin.className = 'w-2.5 h-2.5 rounded-full bg-red-500 animate-ping';
+        txtLogin.innerText = 'Koneksi terputus, menyambung...';
+        if (dotExam) dotExam.className = 'w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0 animate-ping';
+        if (barExam) {
+          barExam.innerText = 'Koneksi terputus... tetap kerjakan soal';
+          barExam.className = 'text-[10px] text-amber-400';
+        }
+      }
+    });
+
+    // Muat data tersimpan jika siswa tidak sengaja me-refresh halaman
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedName = localStorage.getItem('exam_student_name');
+      const savedClass = localStorage.getItem('exam_student_class');
+      if (savedName) document.getElementById('input-nama').value = savedName;
+      if (savedClass) document.getElementById('input-kelas').value = savedClass;
+
+      // Cek apakah sesi siswa ini sedang terkunci di server (anti-bypass refresh)
+      db.ref('students/' + sessionId).once('value').then(snap => {
+        const existing = snap.val();
+        if (existing && existing.status === 'locked') {
+          studentData = existing;
+          violationCount = existing.violations || 1;
+          tampilkanLayarKunci(existing.lastReason || 'Sesi sebelumnya terkunci karena pelanggaran.');
+        }
+      });
+    });
+
+    // =========================================================================
+    // LOGIKA UJIAN SISWA (ANDROID, IPHONE & LAPTOP)
+    // =========================================================================
+    async function requestWakeLock() {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+        }
+      } catch (e) { /* Abaikan jika mode hemat baterai aktif */ }
+    }
+
+    async function mulaiUjian() {
+      const nama = document.getElementById('input-nama').value.trim();
+      const kelas = document.getElementById('input-kelas').value.trim();
+      const tokenInput = document.getElementById('input-token').value.trim().toUpperCase();
+
+      if (!nama || !kelas || !tokenInput) {
+        return alert("Harap isi Nama Lengkap, Kelas, dan Token Ujian!");
+      }
+
+      const btn = document.getElementById('btn-mulai');
+      btn.disabled = true;
+      btn.innerText = "Memverifikasi Token...";
+
+      try {
+        const configSnap = await db.ref('exam_config').once('value');
+        const config = configSnap.val();
+
+        if (!config || !config.formUrl || config.token !== tokenInput) {
+          btn.disabled = false;
+          btn.innerText = "Masuk & Kunci Layar Ujian";
+          return alert("Token ujian salah atau ujian belum diaktifkan oleh guru!");
+        }
+
+        graceMs = Number(config.graceMs ?? 1500);
+        localStorage.setItem('exam_student_name', nama);
+        localStorage.setItem('exam_student_class', kelas);
+
+        // Cek apakah sesi ini sebelumnya terkunci (mencegah siswa mengakali kunci dengan login ulang)
+        const prevSnap = await db.ref('students/' + sessionId).once('value');
+        const prevData = prevSnap.val();
+
+        if (prevData && prevData.status === 'locked') {
+          studentData = prevData;
+          violationCount = prevData.violations || 1;
+          tampilkanLayarKunci(prevData.lastReason || 'Sesi terkunci.');
+          pantauPerintahGuru();
+          return;
+        }
+
+        // Aktifkan Fullscreen pada Laptop/Android (iOS Safari otomatis melewatinya tanpa error)
+        if (!isIOS && document.documentElement.requestFullscreen) {
+          try { await document.documentElement.requestFullscreen(); } catch (e) {}
+        }
+
+        // Jaga layar HP tetap menyala
+        await requestWakeLock();
+
+        violationCount = prevData ? (prevData.violations || 0) : 0;
+        studentData = {
+          sessionId,
+          nama,
+          kelas,
+          device: deviceLabel,
+          status: 'active',
+          violations: violationCount,
+          lastActive: Date.now()
+        };
+
+        await db.ref('students/' + sessionId).update(studentData);
+
+        document.getElementById('display-nama').innerText = `${nama} (${kelas})`;
+        document.getElementById('display-pelanggaran').innerText = violationCount;
+        document.getElementById('form-frame').src = config.formUrl;
+
+        document.getElementById('view-student-login').classList.add('hidden');
+        document.getElementById('view-student-exam').classList.remove('hidden');
+
+        isExamActive = true;
+        pasangSensorAntiCurang();
+        pantauPerintahGuru();
+        mulaiHeartbeat();
+
+      } catch (err) {
+        alert("Gagal terhubung ke server. Periksa koneksi internet Anda.");
+        btn.disabled = false;
+        btn.innerText = "Masuk & Kunci Layar Ujian";
+      }
+    }
+
+    function pasangSensorAntiCurang() {
+      // Blokir klik kanan & shortcut copy-paste di laptop
+      document.addEventListener('contextmenu', e => e.preventDefault());
+      document.addEventListener('keydown', e => {
+        if ((e.ctrlKey || e.metaKey) && ['c', 'v', 'x', 'u', 's', 'p'].includes(e.key.toLowerCase())) {
+          e.preventDefault();
+        }
+      });
+
+      // 1. Deteksi Pindah Tab / Home Screen / Buka Aplikasi Lain (Android, iPhone & Laptop)
+      document.addEventListener('visibilitychange', () => {
+        if (!isExamActive || isLocked) return;
+
+        if (document.visibilityState === 'hidden') {
+          if (graceMs === 0) {
+            picuPelanggaran("Berpindah Tab / Keluar Layar Ujian");
+          } else {
+            hideTimer = setTimeout(() => {
+              if (document.visibilityState === 'hidden' && isExamActive && !isLocked) {
+                picuPelanggaran("Berpindah Tab / Membuka Aplikasi Lain");
+              }
+            }, graceMs);
+          }
+        } else if (document.visibilityState === 'visible') {
+          clearTimeout(hideTimer);
+          requestWakeLock();
+        }
+      });
+
+      // 2. Deteksi iOS Safari menutup / menyembunyikan halaman
+      window.addEventListener('pagehide', () => {
+        if (isExamActive && !isLocked) {
+          picuPelanggaran("Menutup / Meninggalkan Browser (iOS)");
+        }
+      });
+
+      // 3. Khusus Laptop/PC: Deteksi Split-Screen / Klik Jendela Lain (Aman untuk keyboard virtual HP)
+      if (!isMobileDevice) {
+        window.addEventListener('blur', () => {
+          setTimeout(() => {
+            const activeEl = document.activeElement;
+            const formFrame = document.getElementById('form-frame');
+            if (isExamActive && !isLocked && document.visibilityState === 'visible' && activeEl !== formFrame) {
+              picuPelanggaran("Membuka Jendela Lain / Split-Screen");
+            }
+          }, 200);
+        });
+
+        document.addEventListener('fullscreenchange', () => {
+          if (isExamActive && !isLocked && !document.fullscreenElement) {
+            picuPelanggaran("Keluar dari Mode Layar Penuh");
+          }
+        });
+      }
+    }
+
+    function picuPelanggaran(alasan) {
+      if (isLocked) return;
+      violationCount++;
+      const waktu = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const detail = `${waktu} - ${alasan}`;
+
+      tampilkanLayarKunci(detail);
+
+      db.ref('students/' + sessionId).update({
+        status: 'locked',
+        violations: violationCount,
+        lastReason: detail,
+        lastActive: Date.now()
+      });
+      db.ref('students/' + sessionId + '/logs').push({
+        time: waktu,
+        reason: alasan
+      });
+    }
+
+    function tampilkanLayarKunci(alasanText) {
+      isLocked = true;
+      document.getElementById('display-pelanggaran').innerText = violationCount;
+      document.getElementById('lock-reason').innerText = alasanText;
+      document.getElementById('lock-student-name').innerText = studentData.nama || localStorage.getItem('exam_student_name') || '-';
+      document.getElementById('lock-session-id').innerText = sessionId;
+      document.getElementById('lock-screen').classList.remove('hidden');
+    }
+
+    // Mendengarkan 1-Klik Reset Sesi dari Dashboard Guru secara Real-Time
+    function pantauPerintahGuru() {
+      db.ref('students/' + sessionId).on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (!data) return;
+
+        // Guru menekan tombol Reset Sesi
+        if (data.status === 'active' && isLocked) {
+          isLocked = false;
+          document.getElementById('lock-screen').classList.add('hidden');
+          requestWakeLock();
+          if (!isIOS && document.documentElement.requestFullscreen && !document.fullscreenElement) {
+            try { document.documentElement.requestFullscreen(); } catch (e) {}
+          }
+        }
+
+        // Jika Apps Script menandai ujian selesai otomatis
+        if (data.status === 'finished' && isExamActive) {
+          tampilkanBuktiSelesai(data);
+        }
+      });
+    }
+
+    function mulaiHeartbeat() {
+      setInterval(() => {
+        if (isExamActive) {
+          db.ref('students/' + sessionId + '/lastActive').set(Date.now());
+        }
+      }, 5000);
+    }
+
+    function konfirmasiSelesai() {
+      if (confirm("Pastikan Anda sudah menekan tombol KIRIM (Submit) di dalam Google Form!\n\nAkhiri ujian sekarang?")) {
+        const kodeBukti = 'VER-' + btoa(sessionId + ':' + violationCount).replace(/=/g, '').slice(0, 8).toUpperCase();
+        const selesaiData = {
+          status: 'finished',
+          violations: violationCount,
+          proofCode: kodeBukti,
+          finishedAt: new Date().toLocaleTimeString('id-ID')
+        };
+        db.ref('students/' + sessionId).update(selesaiData);
+        tampilkanBuktiSelesai(selesaiData);
+      }
+    }
+
+    function tampilkanBuktiSelesai(data) {
+      isExamActive = false;
+      isLocked = false;
+      if (wakeLock) { try { wakeLock.release(); } catch (e) {} }
+
+      document.getElementById('view-student-exam').classList.add('hidden');
+      document.getElementById('lock-screen').classList.add('hidden');
+      document.getElementById('finish-screen').classList.remove('hidden');
+
+      const vCount = data.violations || 0;
+      document.getElementById('cert-nama').innerText = studentData.nama;
+      document.getElementById('cert-kelas').innerText = studentData.kelas;
+      document.getElementById('cert-pelanggaran').innerText = `${vCount} kali`;
+      document.getElementById('cert-status').innerText = vCount === 0 ? 'JUJUR (BERSIH)' : 'TERCATAT PELANGGARAN';
+      document.getElementById('cert-status').className = vCount === 0 ? 'text-emerald-400' : 'text-amber-400';
+      document.getElementById('cert-hash').innerText = data.proofCode || 'VERIFIED';
+    }
+
+    function resetPerangkatBaru() {
+      localStorage.removeItem('exam_session_id');
+      location.reload();
+    }
+
+    // =========================================================================
+    // LOGIKA DASHBOARD GURU (PASSWORD PROTECTED)
+    // =========================================================================
+    function bukaLoginGuru() {
+      document.getElementById('view-teacher-login').classList.remove('hidden');
+      document.getElementById('teacher-pass-input').focus();
+    }
+
+    function tutupLoginGuru() {
+      document.getElementById('view-teacher-login').classList.add('hidden');
+      document.getElementById('teacher-pass-input').value = '';
+    }
+
+    function verifikasiGuru() {
+      const pass = document.getElementById('teacher-pass-input').value;
+      if (pass === TEACHER_PASSWORD) {
+        tutupLoginGuru();
+        document.getElementById('view-student-login').classList.add('hidden');
+        document.getElementById('view-teacher-dashboard').classList.remove('hidden');
+        inisialisasiDashboardGuru();
+      } else {
+        alert("Password pengawas salah!");
+      }
+    }
+
+    function keluarDashboardGuru() {
+      document.getElementById('view-teacher-dashboard').classList.add('hidden');
+      document.getElementById('view-student-login').classList.remove('hidden');
+    }
+
+    function inisialisasiDashboardGuru() {
+      db.ref('exam_config').once('value').then(snap => {
+        if (snap.exists()) {
+          const cfg = snap.val();
+          document.getElementById('cfg-url').value = cfg.formUrl || '';
+          document.getElementById('cfg-token').value = cfg.token || '';
+          document.getElementById('cfg-grace').value = String(cfg.graceMs ?? 1500);
+        }
+      });
+
+      db.ref('students').on('value', (snapshot) => {
+        allStudents = snapshot.val() || {};
+        renderTabelSiswa();
+      });
+
+      setInterval(renderTabelSiswa, 5000);
+    }
+
+    function simpanKonfigurasi() {
+      let formUrl = document.getElementById('cfg-url').value.trim();
+      const token = document.getElementById('cfg-token').value.trim().toUpperCase();
+      const graceMsVal = Number(document.getElementById('cfg-grace').value);
+
+      if (!formUrl || !token) return alert("Isi Link Google Form dan Token Ujian!");
+
+      // Konversi otomatis ke link embed agar tampil pas di iframe HP & Laptop
+      if (formUrl.includes('/viewform') && !formUrl.includes('embedded=true')) {
+        formUrl += (formUrl.includes('?') ? '&' : '?') + 'embedded=true';
+      }
+
+      db.ref('exam_config').set({
+        formUrl,
+        token,
+        graceMs: graceMsVal
+      });
+      alert("Pengaturan ujian berhasil disimpan dan aktif!");
+    }
+
+    function salinLinkSiswa() {
+      navigator.clipboard.writeText(window.location.href.split('?')[0]);
+      alert("Link ujian siswa berhasil disalin! Bagikan ke grup kelas.");
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('btn-sound').innerText = soundEnabled ? '🔔 Suara Alert: ON' : '🔕 Suara Alert: OFF';
+    }
+
+    function playAlertBeep() {
+      if (!soundEnabled) return;
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.25);
+      } catch (e) {}
+    }
+
+    function renderTabelSiswa() {
+      const tbody = document.getElementById('student-table-body');
+      const entries = Object.values(allStudents);
+
+      let countActive = 0, countLocked = 0, countFinished = 0;
+
+      if (entries.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-500">Menunggu siswa masuk ke ruang ujian...</td></tr>`;
+        updateStats(0, 0, 0, 0);
+        previousLockedCount = 0;
+        return;
+      }
+
+      // Prioritaskan siswa yang terkunci di baris paling atas
+      entries.sort((a, b) => (a.status === 'locked' ? -1 : 1));
+
+      tbody.innerHTML = entries.map(s => {
+        const isOffline = (Date.now() - (s.lastActive || 0)) > 16000 && s.status === 'active';
+        if (s.status === 'active') countActive++;
+        if (s.status === 'locked') countLocked++;
+        if (s.status === 'finished') countFinished++;
+
+        let badge = '';
+        if (s.status === 'locked') {
+          badge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse">🔒 TERKUNCI (${s.violations}x)</span>`;
+        } else if (s.status === 'finished') {
+          badge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-400 border border-blue-500/40">✅ SELESAI</span>`;
+        } else if (isOffline) {
+          badge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/40">⚠️ SINYAL PUTUS</span>`;
+        } else {
+          badge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">🟢 MENGERJAKAN</span>`;
+        }
+
+        const logsHtml = s.logs
+          ? Object.values(s.logs).map(l => `<div class="text-[11px] text-red-300">• [${escapeHtml(l.time)}] ${escapeHtml(l.reason)}</div>`).join('')
+          : '';
+
+        const kejujuranHtml = (s.violations || 0) === 0
+          ? `<span class="text-xs text-emerald-400 font-medium">✓ Jujur (0 Pelanggaran)</span>`
+          : `<div class="space-y-0.5 max-h-24 overflow-y-auto">${logsHtml}</div>`;
+
+        return `
+          <tr class="${s.status === 'locked' ? 'bg-red-950/25' : 'hover:bg-slate-800/40'}">
+            <td class="p-4">
+              <div class="font-bold text-white">${escapeHtml(s.nama)}</div>
+              <div class="text-xs text-slate-400 mt-0.5">${escapeHtml(s.kelas)} • ${escapeHtml(s.device)}</div>
+              <div class="text-[10px] font-mono text-slate-500 mt-0.5">ID: ${escapeHtml(s.sessionId)}</div>
+            </td>
+            <td class="p-4">${badge}</td>
+            <td class="p-4">
+              ${kejujuranHtml}
+              ${s.proofCode ? `<div class="text-[11px] font-mono text-blue-300 mt-1">Bukti: ${escapeHtml(s.proofCode)}</div>` : ''}
+            </td>
+            <td class="p-4 text-right">
+              <button onclick="resetSesiSiswa('${escapeHtml(s.sessionId)}')" class="bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold text-xs px-3.5 py-2 rounded-xl shadow transition">
+                🔓 Reset Sesi
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      if (countLocked > previousLockedCount) {
+        playAlertBeep();
+      }
+      previousLockedCount = countLocked;
+
+      updateStats(entries.length, countActive, countLocked, countFinished);
+    }
+
+    function updateStats(total, active, locked, finished) {
+      document.getElementById('stat-total').innerText = total;
+      document.getElementById('stat-active').innerText = active;
+      document.getElementById('stat-locked').innerText = locked;
+      document.getElementById('stat-finished').innerText = finished;
+    }
+
+    // 1-KLIK RESET SESI DARI DASHBOARD GURU
+    function resetSesiSiswa(targetSessionId) {
+      db.ref('students/' + targetSessionId).update({
+        status: 'active',
+        lastActive: Date.now()
+      });
+    }
+
+    function hapusSemuaSesi() {
+      if (confirm("Hapus seluruh data peserta ujian saat ini? Pastikan Anda sudah mengunduh bukti CSV jika diperlukan.")) {
+        db.ref('students').remove();
+      }
+    }
+
+    function exportCSV() {
+      const entries = Object.values(allStudents);
+      if (!entries.length) return alert("Belum ada data peserta untuk diunduh.");
+
+      let csv = "Nama,Kelas,Perangkat,Status,Jumlah Pelanggaran,Log Terakhir,Kode Bukti\n";
+      entries.forEach(s => {
+        csv += `"${(s.nama||'').replace(/"/g,'""')}","${(s.kelas||'').replace(/"/g,'""')}","${s.device||''}","${s.status||''}",${s.violations || 0},"${(s.lastReason||'-').replace(/"/g,'""')}","${s.proofCode || '-'}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Laporan_Kejujuran_Ujian_${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+    }
+  </script>
+</body>
+</html>
